@@ -1,0 +1,49 @@
+# Makefile для заданий 5-6: Параллельное суммирование
+CC = gcc
+CFLAGS = -Wall -Wextra -std=gnu99 -pthread
+
+# Цели
+all: parallel_sum
+
+# Основная программа параллельного суммирования
+parallel_sum: parallel_sum.c sum_utils.c utils.c sum_utils.h utils.h
+	$(CC) $(CFLAGS) -o parallel_sum parallel_sum.c sum_utils.c utils.c
+
+# Отдельная компиляция объектных файлов
+sum_utils.o: sum_utils.c sum_utils.h
+	$(CC) $(CFLAGS) -c -o sum_utils.o sum_utils.c
+
+utils.o: utils.c utils.h
+	$(CC) $(CFLAGS) -c -o utils.o utils.c
+
+# Очистка
+clean:
+	rm -f parallel_sum *.o
+
+# Тестовые запуски
+test_small:
+	./parallel_sum --threads_num 2 --seed 123 --array_size 100
+
+test_medium:
+	./parallel_sum --threads_num 4 --seed 123 --array_size 1000
+
+test_large:
+	./parallel_sum --threads_num 8 --seed 123 --array_size 1000000
+
+test_all: test_small test_medium test_large
+
+# Показать справку
+help:
+	@echo "=== Makefile для параллельного суммирования (задания 5-6) ==="
+	@echo "Команды:"
+	@echo "  make -f Makefile.parallel_sum all        - собрать parallel_sum"
+	@echo "  make -f Makefile.parallel_sum clean      - очистить"
+	@echo "  make -f Makefile.parallel_sum test_all   - запустить все тесты"
+	@echo "  make -f Makefile.parallel_sum test_small - тест малого массива"
+	@echo "  make -f Makefile.parallel_sum test_medium- тест среднего массива"
+	@echo "  make -f Makefile.parallel_sum test_large - тест большого массива"
+	@echo ""
+	@echo "Запуск:"
+	@echo "  ./parallel_sum --threads_num N --seed N --array_size N"
+
+.PHONY: all clean test_small test_medium test_large test_all help
