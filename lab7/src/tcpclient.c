@@ -7,19 +7,29 @@
 #include <sys/types.h>
 #include <unistd.h>
 
-#define BUFSIZE 100
+// Макросы SADDR и SIZE оставим для удобства, они не являются настраиваемыми параметрами
 #define SADDR struct sockaddr
 #define SIZE sizeof(struct sockaddr_in)
 
 int main(int argc, char *argv[]) {
   int fd;
   int nread;
-  char buf[BUFSIZE];
+  int bufsize;
   struct sockaddr_in servaddr;
-  if (argc < 3) {
-    printf("Too few arguments \n");
+
+  // Проверка на 3 аргумента: IP, Port, Bufsize
+  if (argc < 4) {
+    printf("Usage: %s <server_IP> <port> <bufsize>\n", argv[0]);
     exit(1);
   }
+
+  // Получаем размер буфера из 3-го аргумента
+  bufsize = atoi(argv[3]);
+  if (bufsize <= 0) {
+    fprintf(stderr, "Invalid buffer size\n");
+    exit(1);
+  }
+  char buf[bufsize];
 
   if ((fd = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
     perror("socket creating");
@@ -34,6 +44,7 @@ int main(int argc, char *argv[]) {
     exit(1);
   }
 
+  // Порт из 2-го аргумента
   servaddr.sin_port = htons(atoi(argv[2]));
 
   if (connect(fd, (SADDR *)&servaddr, SIZE) < 0) {
@@ -42,7 +53,7 @@ int main(int argc, char *argv[]) {
   }
 
   write(1, "Input message to send\n", 22);
-  while ((nread = read(0, buf, BUFSIZE)) > 0) {
+  while ((nread = read(0, buf, bufsize)) > 0) {
     if (write(fd, buf, nread) < 0) {
       perror("write");
       exit(1);

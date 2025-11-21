@@ -8,14 +8,30 @@
 #include <sys/types.h>
 #include <unistd.h>
 
-#define SERV_PORT 20001
-#define BUFSIZE 1024
 #define SADDR struct sockaddr
 #define SLEN sizeof(struct sockaddr_in)
 
-int main() {
+int main(int argc, char *argv[]) {
   int sockfd, n;
-  char mesg[BUFSIZE], ipadr[16];
+  char ipadr[16];
+  int serv_port, bufsize;
+
+  // Проверка на 2 аргумента: Port, Bufsize
+  if (argc < 3) {
+    printf("Usage: %s <port> <bufsize>\n", argv[0]);
+    exit(1);
+  }
+
+  // Получаем параметры из аргументов
+  serv_port = atoi(argv[1]);
+  bufsize = atoi(argv[2]);
+
+  if (serv_port <= 0 || bufsize <= 0) {
+    fprintf(stderr, "Invalid port or buffer size\n");
+    exit(1);
+  }
+  char mesg[bufsize];
+
   struct sockaddr_in servaddr;
   struct sockaddr_in cliaddr;
 
@@ -27,24 +43,27 @@ int main() {
   memset(&servaddr, 0, SLEN);
   servaddr.sin_family = AF_INET;
   servaddr.sin_addr.s_addr = htonl(INADDR_ANY);
-  servaddr.sin_port = htons(SERV_PORT);
+  // Порт из 1-го аргумента
+  servaddr.sin_port = htons(serv_port);
 
   if (bind(sockfd, (SADDR *)&servaddr, SLEN) < 0) {
     perror("bind problem");
     exit(1);
   }
-  printf("SERVER starts...\n");
+  printf("UDP SERVER starts on port %d with buffer size %d...\n", serv_port,
+         bufsize);
 
   while (1) {
     unsigned int len = SLEN;
 
-    if ((n = recvfrom(sockfd, mesg, BUFSIZE, 0, (SADDR *)&cliaddr, &len)) < 0) {
+    // Используем bufsize вместо BUFSIZE
+    if ((n = recvfrom(sockfd, mesg, bufsize, 0, (SADDR *)&cliaddr, &len)) < 0) {
       perror("recvfrom");
       exit(1);
     }
     mesg[n] = 0;
 
-    printf("REQUEST %s      FROM %s : %d\n", mesg,
+    printf("REQUEST %s \t\tFROM %s : %d\n", mesg,
            inet_ntop(AF_INET, (void *)&cliaddr.sin_addr.s_addr, ipadr, 16),
            ntohs(cliaddr.sin_port));
 
